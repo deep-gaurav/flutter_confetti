@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 
 void main() => runApp(const ConfettiSample());
 
@@ -81,6 +83,18 @@ class _MyAppState extends State<MyApp> {
     return path;
   }
 
+  Future<ui.Image> getImage(String path) async {
+    var completer = Completer<ImageInfo>();
+    var img = new AssetImage(path);
+    img
+        .resolve(const ImageConfiguration())
+        .addListener(ImageStreamListener((info, _) {
+      completer.complete(info);
+    }));
+    ImageInfo imageInfo = await completer.future;
+    return imageInfo.image;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -117,20 +131,28 @@ class _MyAppState extends State<MyApp> {
           //CENTER RIGHT -- Emit left
           Align(
             alignment: Alignment.centerRight,
-            child: ConfettiWidget(
-              confettiController: _controllerCenterRight,
-              blastDirection: pi, // radial value - LEFT
-              particleDrag: 0.05, // apply drag to the confetti
-              emissionFrequency: 0.05, // how often it should emit
-              numberOfParticles: 20, // number of particles to emit
-              gravity: 0.05, // gravity - or fall speed
-              shouldLoop: false,
-              colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink
-              ], // manually specify the colors to be used
-            ),
+            child: FutureBuilder<ui.Image>(
+                future: getImage('assets/kudos.png'),
+                builder: (context, ass) {
+                  if (ass.data != null) {
+                    return ConfettiWidget(
+                      confettiController: _controllerCenterRight,
+                      blastDirection: pi, // radial value - LEFT
+                      particleDrag: 0.05, // apply drag to the confetti
+                      emissionFrequency: 0.05, // how often it should emit
+                      numberOfParticles: 20, // number of particles to emit
+                      gravity: 0.05, // gravity - or fall speed
+                      shouldLoop: false,
+                      image: ass.data!,
+                      colors: const [
+                        Colors.green,
+                        Colors.blue,
+                        Colors.pink
+                      ], // manually specify the colors to be used
+                    );
+                  }
+                  return Container();
+                }),
           ),
           Align(
             alignment: Alignment.centerRight,

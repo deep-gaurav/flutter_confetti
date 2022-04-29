@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:random_color/random_color.dart';
@@ -29,6 +30,7 @@ class ParticleSystem extends ChangeNotifier {
     required double particleDrag,
     required double gravity,
     Path Function(Size size)? createParticlePath,
+    ui.Image? image,
   })  : assert(maxBlastForce > 0 &&
             minBlastForce > 0 &&
             emissionFrequency >= 0 &&
@@ -56,6 +58,7 @@ class ParticleSystem extends ChangeNotifier {
         _maximumSize = maximumSize,
         _particleDrag = particleDrag,
         _rand = Random(),
+        _image = image,
         _createParticlePath = createParticlePath;
 
   ParticleSystemStatus? _particleSystemStatus;
@@ -76,6 +79,7 @@ class ParticleSystem extends ChangeNotifier {
   final Size _maximumSize;
   final double _particleDrag;
   final Path Function(Size size)? _createParticlePath;
+  final ui.Image? _image;
 
   Offset? _particleSystemPosition;
   Size? _screenSize;
@@ -168,7 +172,7 @@ class ParticleSystem extends ChangeNotifier {
     return List<Particle>.generate(
         number,
         (i) => Particle(_generateParticleForce(), _randomColor(), _randomSize(),
-            _gravity, _particleDrag, _createParticlePath));
+            _gravity, _particleDrag, _createParticlePath, _image));
   }
 
   double get _randomBlastDirection =>
@@ -205,8 +209,14 @@ class ParticleSystem extends ChangeNotifier {
 }
 
 class Particle {
-  Particle(vmath.Vector2 startUpForce, Color color, Size size, double gravity,
-      double particleDrag, Path Function(Size size)? createParticlePath)
+  Particle(
+      vmath.Vector2 startUpForce,
+      Color color,
+      Size size,
+      double gravity,
+      double particleDrag,
+      Path Function(Size size)? createParticlePath,
+      this.image)
       : _startUpForce = startUpForce,
         _color = color,
         _mass = randomize(1, 11),
@@ -224,6 +234,7 @@ class Particle {
         _gravity = lerpDouble(0.1, 5, gravity);
 
   final vmath.Vector2 _startUpForce;
+  final ui.Image? image;
 
   final vmath.Vector2 _location;
   final vmath.Vector2 _velocity;

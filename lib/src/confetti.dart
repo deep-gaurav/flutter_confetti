@@ -5,6 +5,7 @@ import 'package:confetti/src/particle.dart';
 
 import 'enums/blast_directionality.dart';
 import 'enums/confetti_controller_state.dart';
+import 'dart:ui' as ui;
 
 class ConfettiWidget extends StatefulWidget {
   const ConfettiWidget({
@@ -26,6 +27,7 @@ class ConfettiWidget extends StatefulWidget {
     this.canvas,
     this.child,
     this.createParticlePath,
+    this.image,
   })  : assert(emissionFrequency >= 0 &&
             emissionFrequency <= 1 &&
             numberOfParticles > 0 &&
@@ -66,6 +68,8 @@ class ConfettiWidget extends StatefulWidget {
   ///
   /// The default function returns rectangular path
   final Path Function(Size size)? createParticlePath;
+
+  final ui.Image? image;
 
   /// The [gravity] is the speed at which the confetti will fall.
   /// The higher the [gravity] the faster it will fall.
@@ -147,18 +151,20 @@ class _ConfettiWidgetState extends State<ConfettiWidget>
     widget.confettiController.addListener(_handleChange);
 
     _particleSystem = ParticleSystem(
-        emissionFrequency: widget.emissionFrequency,
-        numberOfParticles: widget.numberOfParticles,
-        maxBlastForce: widget.maxBlastForce,
-        minBlastForce: widget.minBlastForce,
-        gravity: widget.gravity,
-        blastDirection: widget.blastDirection,
-        blastDirectionality: widget.blastDirectionality,
-        colors: widget.colors,
-        minimumSize: widget.minimumSize,
-        maximumSize: widget.maximumSize,
-        particleDrag: widget.particleDrag,
-        createParticlePath: widget.createParticlePath);
+      emissionFrequency: widget.emissionFrequency,
+      numberOfParticles: widget.numberOfParticles,
+      maxBlastForce: widget.maxBlastForce,
+      minBlastForce: widget.minBlastForce,
+      gravity: widget.gravity,
+      blastDirection: widget.blastDirection,
+      blastDirectionality: widget.blastDirectionality,
+      colors: widget.colors,
+      minimumSize: widget.minimumSize,
+      maximumSize: widget.maximumSize,
+      particleDrag: widget.particleDrag,
+      createParticlePath: widget.createParticlePath,
+      image: widget.image,
+    );
 
     _particleSystem.addListener(_particleSystemListener);
 
@@ -345,6 +351,27 @@ class ParticlePainter extends CustomPainter {
     canvas.drawPath(path, _emitterPaint);
   }
 
+  ui.Picture rotatedImage(ui.Image image, Matrix4 transform) {
+    var pictureRecorder = ui.PictureRecorder();
+    Canvas canvas = Canvas(pictureRecorder);
+
+    // final double r = sqrt(image.width * image.width + image.height * image.height) / 2;
+    // final alpha = atan(image.height / image.width);
+    // final beta = alpha + angle;
+    // final shiftY = r * sin(beta);
+    // final shiftX = r * cos(beta);
+    // final translateX = image.width / 2 - shiftX;
+    // final translateY = image.height / 2 - shiftY;
+    // canvas.translate(translateX, translateY);
+    // canvas.rotate(angle);
+    canvas.transform(transform.storage);
+    canvas.drawImage(image, Offset.zero, Paint());
+
+    // canvas.transform(transform.storage);
+
+    return pictureRecorder.endRecording();
+  }
+
   void _paintParticles(Canvas canvas) {
     for (final particle in particles) {
       final rotationMatrix4 = Matrix4.identity()
@@ -354,7 +381,16 @@ class ParticlePainter extends CustomPainter {
         ..rotateZ(particle.angleZ);
 
       final finalPath = particle.path.transform(rotationMatrix4.storage);
-      canvas.drawPath(finalPath, _particlePaint..color = particle.color);
+      if (particle.image != null) {
+        // var paint = Paint();
+        canvas.drawPicture(rotatedImage(particle.image!, rotationMatrix4));
+        // canvas.transform(inverseMatrix.storage);
+        // canvas.drawImage(particle.image!, Offset(0, 0), paint);
+        // canvas.transform(rotationMatrix4.storage);
+      } else {
+        canvas.drawPath(finalPath, _particlePaint..color = particle.color);
+      }
+      // canvas.drawImage(image, offset, paint)
     }
   }
 
